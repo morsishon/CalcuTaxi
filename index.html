@@ -207,8 +207,8 @@ input:focus,textarea:focus{
         $('totalUber').textContent = fmt(sumaTaxi.total);
         $('cantUber').textContent = sumaTaxi.cantidad;
 
-        // Diferencia de Uber
-        const diferenciaUber = sumaTaxi.total - totalUber;
+        // Diferencia de Uber (siempre positiva para que se reste)
+        const diferenciaUber = Math.abs(totalUber - sumaTaxi.total);
         $('diferenciaUber').textContent = fmt(diferenciaUber);
 
         // Subtotal 1 (el traslado siempre resta)
