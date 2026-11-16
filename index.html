@@ -62,26 +62,46 @@ input:focus,textarea:focus{
   box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent);
 }
 
+.pct-wrap{display:inline-flex;align-items:center;gap:4px}
+.pct-input{
+  width:56px !important;padding:4px 6px !important;border-radius:8px !important;
+  font-size:15px !important;font-weight:600 !important;text-align:center;
+  background:var(--surface);border:1px solid var(--line);color:var(--text);
+}
+
 .suma{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:13px;color:var(--muted)}
 .suma b{color:var(--text);font-size:15px;font-weight:600}
 
 .rows{margin:4px 0 30px;border-top:1px solid var(--line)}
 .row{
-  display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;
+  display:flex;justify-content:space-between;align-items:center;padding:13px 0;
   border-bottom:1px solid var(--line);font-size:15px;color:var(--muted);
 }
 .row b{color:var(--text);font-size:17px;font-weight:600}
 
+.rendicion-box{
+  margin-top:24px;padding-top:20px;border-top:1px dashed var(--line);
+}
+
 .final{
-  position:sticky;bottom:max(14px,env(safe-area-inset-bottom));margin-top:32px;padding:14px 20px 16px;
+  position:sticky;bottom:max(14px,env(safe-area-inset-bottom));margin-top:24px;padding:14px 20px 16px;
   border-radius:24px;background:var(--final-bg);border:1px solid rgba(255,255,255,.08);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 14px 36px rgba(0,0,0,.35);
 }
+.final-grid{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+}
 .final span{display:block;font-size:13px;font-weight:500;color:#9aa6b6}
 .final strong{
-  display:block;margin-top:2px;font-size:clamp(30px,9vw,42px);font-weight:700;
+  display:block;margin-top:2px;font-size:clamp(28px,8vw,38px);font-weight:700;
   letter-spacing:-.02em;line-height:1.1;color:#f6c744;
 }
+.final-sub{
+  margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.final-sub span{font-size:13px;color:#9aa6b6}
+.final-sub b{font-size:18px;font-weight:700;color:#e9edf2}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -132,7 +152,10 @@ input:focus,textarea:focus{
 
   <div class="rows">
     <div class="row"><span>Subtotal 1</span><b id="subtotal1">0,00</b></div>
-    <div class="row"><span>Mi ganancia (35%)</span><b id="miGanancia">0,00</b></div>
+    <div class="row">
+      <span class="pct-wrap">Mi ganancia (<input type="text" id="porcentajeGanancia" class="pct-input" inputmode="decimal" value="35" aria-label="Porcentaje de ganancia">%)</span>
+      <b id="miGanancia">0,00</b>
+    </div>
     <div class="row"><span>Subtotal 2 (para gastos)</span><b id="subtotal2">0,00</b></div>
   </div>
 
@@ -157,9 +180,22 @@ input:focus,textarea:focus{
     <input type="text" id="lavado" inputmode="decimal" autocomplete="off" placeholder="Ej: 1000">
   </div>
 
+  <div class="rendicion-box">
+    <div class="field">
+      <label for="efectivo">9. Efectivo disponible para rendir ($)</label>
+      <input type="text" id="efectivo" inputmode="decimal" autocomplete="off" placeholder="Ej: 50000">
+    </div>
+  </div>
+
   <div class="final" id="final">
-    <span>Neto final a rendir</span>
-    <strong id="netoFinal">0,00</strong>
+    <div>
+      <span>Neto final a rendir</span>
+      <strong id="netoFinal">0,00</strong>
+    </div>
+    <div class="final-sub">
+      <span>A transferir (Neto - Efectivo)</span>
+      <b id="aTransferir">0,00</b>
+    </div>
   </div>
 
 </div>
@@ -215,8 +251,12 @@ input:focus,textarea:focus{
         const subtotal1 = totalTaximetro - diferenciaUber - traslado;
         $('subtotal1').textContent = fmt(subtotal1);
 
+        // Porcentaje editable (por defecto 35%)
+        const pctRaw = parseFloat($('porcentajeGanancia').value.replace(',', '.'));
+        const pct = isNaN(pctRaw) ? 0 : pctRaw;
+
         // Ganancia y Subtotal 2
-        const miGanancia = subtotal1 * 0.35;
+        const miGanancia = subtotal1 * (pct / 100);
         const subtotal2 = subtotal1 - miGanancia;
         $('miGanancia').textContent = fmt(miGanancia);
         $('subtotal2').textContent = fmt(subtotal2);
@@ -229,7 +269,13 @@ input:focus,textarea:focus{
         const totalGastos = sumaGNC.total + getVal('tickets') + getVal('compras') + getVal('lavado');
 
         // Neto final
-        $('netoFinal').textContent = fmt(subtotal2 - totalGastos);
+        const netoFinal = subtotal2 - totalGastos;
+        $('netoFinal').textContent = fmt(netoFinal);
+
+        // Efectivo y monto a transferir
+        const efectivo = getVal('efectivo');
+        const aTransferir = netoFinal - efectivo;
+        $('aTransferir').textContent = fmt(aTransferir);
     }
 
     // Recalcular con cada cambio

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calcutaxi-v2';
+const CACHE_NAME = 'calcutaxi-v3';
 const ASSETS = [
   './',
   './index.html',
